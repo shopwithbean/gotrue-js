@@ -1,5 +1,5 @@
 {
-  "name": "@supabase/gotrue-js",
+  "name": "@shopwithbean/gotrue-js",
   "version": "0.0.0",
   "description": "Isomorphic GoTrue client",
   "keywords": [
