@@ -10,7 +10,7 @@ import {
   isAuthApiError,
   isAuthError,
 } from './lib/errors'
-import { Fetch, _request, _sessionResponse, _userResponse, _ssoResponse } from './lib/fetch'
+import { Fetch, _request, _sessionResponse, _userResponse, _ssoResponse, Headers } from './lib/fetch'
 import {
   decodeJWTPayload,
   Deferred,
@@ -63,6 +63,7 @@ import type {
   AuthenticatorAssuranceLevels,
   Factor,
   MFAChallengeAndVerifyParams,
+  SessionResponse,
 } from './lib/types'
 
 polyfillGlobalThis() // Make "globalThis" available
@@ -327,6 +328,17 @@ export default class GoTrueClient {
           },
           xform: _sessionResponse,
         })
+      } else if ('username' in credentials) {
+        const { username, password, options } = credentials
+        res = await _request(this.fetch, 'POST', `${this.url}/token?grant_type=password`, {
+          headers: { ...this.headers, 'Content-Type': Headers.ContentTypeFormUrlEncoded },
+          body: {
+            username,
+            password,
+            gotrue_meta_security: { captcha_token: options?.captchaToken },
+          },
+          xform: _sessionResponse,
+        })
       } else if ('phone' in credentials) {
         const { phone, password, options } = credentials
         res = await _request(this.fetch, 'POST', `${this.url}/token?grant_type=password`, {
@@ -552,26 +564,7 @@ export default class GoTrueClient {
    * Returns the session, refreshing it if necessary.
    * The session returned can be null if the session is not detected which can happen in the event a user is not signed-in or has logged out.
    */
-  async getSession(): Promise<
-    | {
-        data: {
-          session: Session
-        }
-        error: null
-      }
-    | {
-        data: {
-          session: null
-        }
-        error: AuthError
-      }
-    | {
-        data: {
-          session: null
-        }
-        error: null
-      }
-  > {
+  async getSession(): Promise<SessionResponse> {
     // make sure we've read the session from the url if there is one
     // save to just await, as long we make sure _initialize() never throws
     await this.initializePromise
@@ -970,7 +963,7 @@ export default class GoTrueClient {
         async (attempt) => {
           await sleep(attempt * 200) // 0, 200, 400, 800, ...
 
-          return await _request(this.fetch, 'POST', `${this.url}/token?grant_type=refresh_token`, {
+          return await _request(this.fetch, 'POST', `${this.url}/token?grant_type=refresh_token&refresh_token=${refreshToken}`, {
             body: { refresh_token: refreshToken },
             headers: this.headers,
             xform: _sessionResponse,

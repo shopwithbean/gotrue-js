@@ -11,6 +11,11 @@ import { AuthApiError, AuthRetryableFetchError, AuthUnknownError } from './error
 
 export type Fetch = typeof fetch
 
+export enum Headers {
+  ContentTypeJson = "application/json;charset=UTF-8",
+  ContentTypeFormUrlEncoded = "application/x-www-form-urlencoded"
+}
+
 export interface FetchOptions {
   headers?: {
     [key: string]: string
@@ -60,8 +65,13 @@ const _getRequestParams = (
     return params
   }
 
-  params.headers = { 'Content-Type': 'application/json;charset=UTF-8', ...options?.headers }
-  params.body = JSON.stringify(body)
+  params.headers = { 'Content-Type': Headers.ContentTypeJson, ...options?.headers }
+
+  if (params.headers['Content-Type'] === Headers.ContentTypeFormUrlEncoded) {
+    params.body = new URLSearchParams({ ...body })
+  } else {
+    params.body = JSON.stringify(body)
+  }
   return { ...params, ...parameters }
 }
 

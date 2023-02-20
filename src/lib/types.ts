@@ -109,6 +109,26 @@ export type UserResponse =
       error: AuthError
     }
 
+export type SessionResponse =
+  | {
+    data: {
+      session: Session
+    }
+    error: null
+  }
+  | {
+    data: {
+      session: null
+    }
+    error: AuthError
+  }
+  | {
+    data: {
+      session: null
+    }
+    error: null
+  }
+
 export interface Session {
   /**
    * The oauth provider token. If present, this can be used to make external API requests to the oauth provider used.
@@ -365,6 +385,16 @@ export type SignInWithPasswordCredentials =
   | {
       /** The user's email address. */
       email: string
+      /** The user's password. */
+      password: string
+      options?: {
+        /** Verification token received when the user completes the captcha on the site. */
+        captchaToken?: string
+      }
+    }
+  | {
+      /** The user's username (email address). */
+      username: string
       /** The user's password. */
       password: string
       options?: {
